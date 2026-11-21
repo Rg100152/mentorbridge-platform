@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% from '_icons.html' import search, verified, star, briefcase, video, calendar, arrow, check, heart, shield, code %}
+
+{% block title %}{{ mentor.name }} — MentorBridge{% endblock %}
+
+{% block content %}
+<section class="profile-head">
+  <div class="container">
+    <a class="back-link" href="{{ url_for('main.mentors') }}">← Back to mentors</a>
+    <div class="profile-hero">
+      <div class="profile-avatar">
+        <img src="{{ mentor.avatar }}" alt="{{ mentor.name }}" data-fallback-seed="{{ mentor.name }}">
+        {% if mentor.is_available %}<span class="pulse-dot large"></span>{% endif %}
+      </div>
+      <div class="profile-intro">
+        <div class="profile-name-row">
+          <h1>{{ mentor.name }}</h1>
+          {% if mentor.verified %}<span class="verified-pill">{{ verified(16) }} Verified Mentor</span>{% endif %}
+        </div>
+        <p class="profile-headline">{{ mentor.headline }}</p>
+        <div class="profile-tags">
+          <span class="category-pill">{{ category_label }}</span>
+          <span class="tag-chip">{{ briefcase(14) }} {{ mentor.experience }} years experience</span>
+          {% if mentor.is_available %}<span class="tag-chip online-chip">● Available for sessions</span>{% endif %}
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-lime btn-lg" type="button" data-open-booking>{{ video(18) }} Book Session</button>
+        {% if current_user and current_user.role == 'mentee' %}
+        <form action="{{ url_for('dashboard.toggle_favorite', mentor_id=mentor.id) }}" method="post">
+          <button class="btn btn-outline-light btn-block" type="submit">{{ heart(16, is_favorite) }} {{ 'Saved' if is_favorite else 'Save mentor' }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div><strong>{{ star(15) }} {{ mentor.rating }}</strong><span>Rating</span></div>
+      <div><strong>{{ mentor.sessions_count }}+</strong><span>Sessions completed</span></div>
+      <div><strong>{{ mentor.experience }} yrs</strong><span>Experience</span></div>
+      <div><strong>{{ 'Free' if mentor.hourly_rate == 0 else '₹' ~ mentor.hourly_rate|int }}</strong><span>Per hour</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section profile-section">
+  <div class="container profile-layout">
+    <div class="profile-main">
+      <article class="card content-card">
+        <h2>About {{ mentor.name.split()[0] }}</h2>
+        <p class="body-text">{{ mentor.bio }}</p>
+      </article>
+
+      <article class="card content-card">
+        <h2>Expertise</h2>
+        <div class="skill-chips large">
+          {% for skill in (mentor.skills or '').split(',') %}<span>{{ skill.strip() }}</span>{% endfor %}
+        </div>
+      </article>
+
+      <article class="card content-card" id="githubCard">
+        <h2>GitHub activity</h2>
+        {% if mentor.github_username %}
+        <div id="githubBadge" data-username="{{ mentor.github_username }}" class="github-badge">
+          <span class="muted">Loading live GitHub stats for @{{ mentor.github_username }}…</span>
+        </div>
+        {% else %}<p class="muted">This mentor has not linked a GitHub profile yet.</p>{% endif %}
+      </article>
+
+      <article class="card content-card">
+        <h2>Reviews from learners <span class="count-badge">{{ reviews|length }}</span></h2>
+        {% if reviews %}
+          {% for r in reviews %}
+          <div class="review-item">
+            <img src="{{ r.mentee_avatar }}" alt="" data-fallback-seed="{{ r.mentee_name }}">
+            <div>
+              <div class="review-top"><strong>{{ r.mentee_name }}</strong><span class="stars">{% for i in range(r.rating) %}{{ star(13) }}{% endfor %}</span></div>
+              <p>{{ r.comment }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="muted">No reviews yet — be the first learner to share feedback after a session.</p>
+        {% endif %}
+
+        {% if current_user and current_user.role == 'mentee' %}
+        <form class="review-form" action="{{ url_for('dashboard.add_review', mentor_id=mentor.id) }}" method="post">
+          <h3>Share your experience</h3>
+          <select name="rating" aria-label="Rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select>
+          <input type="text" name="comment" placeholder="How was your session?" maxlength="500" required>
+          <button class="btn btn-primary btn-sm" type="submit">Post review</button>
+        </form>
+        {% endif %}
+      </article>
+    </div>
+
+    <aside class="profile-side">
+      <div class="card booking-card">
+        <div class="booking-price"><strong>{{ 'Free' if mentor.hourly_rate == 0 else '₹' ~ mentor.hourly_rate|int }}</strong><span>/ hour</span></div>
+        <h3>Book a 1-on-1 session</h3>
+        <p class="muted small">Send a request — {{ mentor.name.split()[0] }} will accept or decline it from their dashboard.</p>
+        <form id="bookingFormInline" action="{{ url_for('dashboard.book_session', mentor_id=mentor.id) }}" method="post" class="booking-form">
+          <label>Topic you want to discuss
+            <input type="text" name="topic" placeholder="e.g. Django ORM performance" minlength="3" required>
+          </label>
+          <label>Preferred date
+            <input type="date" name="session_date" min="{{ today }}" value="{{ today }}" required>
+          </label>
+          <label>Time slot
+            <select name="time_slot" required>
+              <option value="">Select a slot</option>
+              {% for slot in slots %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Anything else? (optional)
+            <textarea name="note" rows="2" maxlength="500" placeholder="Share context about your goal"></textarea>
+          </label>
+          {% if current_user %}
+            {% if current_user.role == 'mentee' %}<button class="btn btn-primary btn-block" type="submit">Request session {{ arrow(15) }}</button>
+            {% else %}<p class="muted small">You are signed in as a mentor. Use a mentee account to book sessions.</p>{% endif %}
+          {% else %}
+            <a class="btn btn-lime btn-block" href="{{ url_for('auth.login') }}">Sign in to book {{ arrow(15) }}</a>
+          {% endif %}
+        </form>
+        <div class="booking-perks"><span>{{ check(14) }} Instant request status</span><span>{{ check(14) }} Free Jitsi video room on approval</span></div>
+      </div>
+      <div class="card safety-card">{{ shield(20) }} <div><strong>Safe & verified</strong><p class="muted small">Profiles are reviewed and sessions happen in your own video room.</p></div></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ GLASSMORPHIC BOOKING MODAL ============ -->
+<div class="modal-backdrop" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle" hidden>
+  <div class="modal-panel">
+    <button class="modal-close" type="button" data-close-booking aria-label="Close">✕</button>
+    <div id="modalBookingBody">
+      <span class="eyebrow dark-eyebrow">1-ON-1 SESSION</span>
+      <h2 id="bookingModalTitle">Book a session with {{ mentor.name.split()[0] }}</h2>
+      <p class="muted small">{{ mentor.headline }}</p>
+      <form id="bookingFormModal" data-endpoint="{{ url_for('dashboard.book_session', mentor_id=mentor.id) }}" class="booking-form">
+        <label>Topic
+          <input type="text" name="topic" placeholder="What do you want to learn?" minlength="3" required>
+        </label>
+        <label>Date
+          <input type="date" name="session_date" min="{{ today }}" value="{{ today }}" required>
+        </label>
+        <fieldset class="slot-picker">
+          <legend>Pick a time slot</legend>
+          <div class="slot-options">
+            {% for slot in slots %}<label class="slot-option"><input type="radio" name="time_slot" value="{{ slot }}" {% if loop.first %}checked{% endif %}><span>{{ slot }}</span></label>{% endfor %}
+          </div>
+        </fieldset>
+        <label>Note (optional)
+          <textarea name="note" rows="2" maxlength="500" placeholder="Tell your mentor a little more"></textarea>
+        </label>
+        {% if current_user and current_user.role == 'mentee' %}
+          <button class="btn btn-lime btn-block btn-lg" type="submit">Send request {{ arrow(16) }}</button>
+        {% elif not current_user %}
+          <a class="btn btn-lime btn-block btn-lg" href="{{ url_for('auth.login') }}">Sign in to book</a>
+        {% else %}
+          <p class="muted small">Switch to a mentee account to request a session.</p>
+        {% endif %}
+      </form>
+    </div>
+    <div class="booking-success" id="bookingSuccess" hidden>
+      <svg class="success-check" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34" fill="none" stroke="#BEF264" stroke-width="4"/><path d="m24 41 11 11 22-24" fill="none" stroke="#064E3B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2>Request sent!</h2>
+      <p class="muted">Your mentor has been notified. Track the status on your dashboard.</p>
+      <a class="btn btn-primary" href="{{ url_for('dashboard.dashboard') }}">Go to dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live GitHub stats — public REST API, no API key or credit card required.
+  (function () {
+    const badge = document.getElementById('githubBadge');
+    if (!badge) return;
+    const username = encodeURIComponent(badge.dataset.username);
+    fetch('https://api.github.com/users/' + username)
+      .then(r => { if (!r.ok) throw new Error('not found'); return r.json(); })
+      .then(d => {
+        badge.innerHTML = '<a class="github-stat" href="' + d.html_url + '" target="_blank" rel="noopener">' +
+          '<img src="' + d.avatar_url + '" alt="@' + d.login + '">' +
+          '<div><strong>@' + d.login + '</strong><span>' + (d.bio || 'Public GitHub profile') + '</span></div>' +
+          '<div class="github-numbers"><b>' + d.public_repos + '</b><small>repos</small><b>' + d.followers + '</b><small>followers</small></div></a>';
+      })
+      .catch(() => { badge.innerHTML = '<span class="muted">GitHub stats are temporarily unavailable.</span>'; });
+  })();
+</script>
+{% endblock %}

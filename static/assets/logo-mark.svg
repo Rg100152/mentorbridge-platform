@@ -1,0 +1,6 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MentorBridge mark">
+  <rect width="48" height="48" rx="12" fill="#064E3B"/>
+  <path d="M14 35C18 20 30 20 34 35" stroke="#BEF264" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="16" cy="20" r="4" fill="#BEF264"/>
+  <circle cx="32" cy="20" r="4" fill="#34D399"/>
+</svg>

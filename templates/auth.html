@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from '_icons.html' import check, star, video, verified, arrow, shield %}
+
+{% block title %}{{ 'Join MentorBridge' if mode == 'signup' else 'Sign in' }} — MentorBridge{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="auth-shell">
+    <!-- Brand side -->
+    <aside class="auth-brand">
+      <div class="auth-brand-inner">
+        <a class="auth-brand-logo" href="{{ url_for('main.index') }}">Mentor<span>Bridge</span></a>
+        {% if mode == 'signup' %}
+          <h2>Your next breakthrough starts with a conversation.</h2>
+          <p>Learn from people who have already solved the problem you are working on.</p>
+        {% else %}
+          <h2>Welcome back to your growth bridge.</h2>
+          <p>Your sessions, mentors and goals are waiting for you.</p>
+        {% endif %}
+        <ul class="auth-points">
+          <li>{{ verified(16) }} Verified, industry-experienced mentors</li>
+          <li>{{ video(16) }} Real live 1-on-1 video sessions</li>
+          <li>{{ star(16) }} Rated by learners after every session</li>
+        </ul>
+        <div class="auth-quote">
+          <p>“The right mentor can save you years of guessing.”</p>
+          <span>— The MentorBridge community</span>
+        </div>
+      </div>
+      <div class="auth-decoration" aria-hidden="true"></div>
+    </aside>
+
+    <!-- Form side -->
+    <div class="auth-form-side">
+      <div class="auth-form-wrap">
+        <div class="auth-tabs" role="tablist">
+          <a class="{{ 'active' if mode == 'login' }}" href="{{ url_for('auth.login') }}" role="tab">Sign In</a>
+          <a class="{{ 'active' if mode == 'signup' }}" href="{{ url_for('auth.signup', role=request.args.get('role', '')) }}" role="tab">Create Account</a>
+        </div>
+
+        <h1>{{ 'Create your account' if mode == 'signup' else 'Good to see you again' }}</h1>
+        <p class="muted auth-sub">{{ 'Choose how you want to use MentorBridge.' if mode == 'signup' else 'Sign in with the email you registered with.' }}</p>
+
+        {% if mode == 'signup' %}
+        {% set selected_role = form.get('role') or request.args.get('role', 'mentee') %}
+        <div class="role-grid" role="radiogroup" aria-label="Account type">
+          <label class="role-option {{ 'selected' if selected_role == 'mentee' }}">
+            <input type="radio" name="rolePicker" value="mentee" {{ 'checked' if selected_role == 'mentee' }} form="signupForm">
+            <span class="role-icon">🎓</span>
+            <strong>Join as a Mentee</strong>
+            <small>Learn, book sessions, grow faster</small>
+          </label>
+          <label class="role-option {{ 'selected' if selected_role == 'mentor' }}">
+            <input type="radio" name="rolePicker" value="mentor" {{ 'checked' if selected_role == 'mentor' }} form="signupForm">
+            <span class="role-icon">🧭</span>
+            <strong>Join as a Mentor</strong>
+            <small>Share expertise, get listed instantly</small>
+          </label>
+        </div>
+
+        <form id="signupForm" action="{{ url_for('auth.signup') }}" method="post" class="auth-form">
+          <input type="hidden" name="role" id="roleInput" value="{{ selected_role }}">
+          <label>Full name<input type="text" name="name" value="{{ form.get('name','') }}" placeholder="Raj Gautam" autocomplete="name" required></label>
+          <label>Email address<input type="email" name="email" value="{{ form.get('email','') }}" placeholder="you@example.com" autocomplete="email" required></label>
+          <div class="form-row">
+            <label>Password<input type="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required></label>
+            <label>Confirm password<input type="password" name="confirm" placeholder="Repeat password" autocomplete="new-password" minlength="8" required></label>
+          </div>
+
+          <div id="mentorFields" class="mentor-extra {{ 'visible' if selected_role == 'mentor' }}" {% if selected_role != 'mentor' %}hidden{% endif %}>
+            <div class="form-divider"><span>Mentor profile details</span></div>
+            <div class="form-row">
+              <label>Domain
+                <select name="category">
+                  <option>Python</option><option>Cyber Security</option><option>Web Design</option>
+                  <option>Data Science</option><option>Career Guidance</option>
+                </select>
+              </label>
+              <label>Hourly rate (₹, 0 for free)<input type="number" name="hourly_rate" min="0" max="10000" value="0"></label>
+            </div>
+            <label>Headline<input type="text" name="headline" placeholder="Senior Python Engineer & educator" maxlength="120"></label>
+            <label>Skills (comma separated)<input type="text" name="skills" placeholder="Python, Django, REST APIs, Testing"></label>
+            <label>Short bio<textarea name="bio" rows="3" maxlength="2000" placeholder="Tell learners how you can help them..."></textarea></label>
+          </div>
+
+          <button class="btn btn-lime btn-block btn-lg" type="submit">Create account {{ arrow(16) }}</button>
+        </form>
+        {% else %}
+        <form action="{{ url_for('auth.login') }}" method="post" class="auth-form">
+          <label>Email address<input type="email" name="email" value="{{ form.get('email','') }}" placeholder="you@example.com" autocomplete="email" required></label>
+          <label>Password<input type="password" name="password" placeholder="Your password" autocomplete="current-password" required></label>
+          <div class="form-between"><label class="remember"><input type="checkbox" name="remember" checked> Keep me signed in</label><a class="text-link" href="{{ url_for('auth.signup') }}">Forgot password?</a></div>
+          <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in {{ arrow(16) }}</button>
+        </form>
+        {% endif %}
+
+        <p class="auth-switch">
+          {% if mode == 'signup' %}Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+          {% else %}New to MentorBridge? <a href="{{ url_for('auth.signup') }}">Create an account</a>{% endif %}
+        </p>
+        <p class="demo-hint">Demo accounts: <code>mentor@mentorbridge.dev</code> or <code>demo@mentorbridge.dev</code> · password <code>demo1234</code></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

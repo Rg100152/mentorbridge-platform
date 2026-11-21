@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% from '_icons.html' import search, verified, star, video, briefcase, calendar, arrow, bolt, shield, chart, palette, compass, code, check %}
+
+{% block content %}
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-pattern" aria-hidden="true"></div>
+  <div class="hero-glow hero-glow-a" aria-hidden="true"></div>
+  <div class="hero-glow hero-glow-b" aria-hidden="true"></div>
+
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> 1-on-1 LIVE MENTORSHIP · BY RAJ GAUTAM</span>
+      <h1>Transform Your Skills with<br><span class="gradient-text">Personalised Mentorship</span></h1>
+      <p class="hero-sub">Learn directly from verified industry mentors. Real projects, honest feedback, and a clear growth plan — one live session at a time.</p>
+
+      <form class="hero-search" action="{{ url_for('main.mentors') }}" method="get" role="search">
+        <label class="sr-only" for="heroSkill">Search by skill or name</label>
+        <span class="search-icon">{{ search(20) }}</span>
+        <input id="heroSkill" type="search" name="q" placeholder="Search by skill e.g. Python, Cyber Security, UI/UX..." autocomplete="off">
+        <button class="btn btn-lime" type="submit">Find Mentors {{ arrow(16) }}</button>
+      </form>
+
+      <div class="hero-quick">
+        <span>Popular:</span>
+        {% for tag in ['Python', 'Cyber Security', 'Web Design', 'Data Science', 'Career Guidance'] %}
+          <a href="{{ url_for('main.mentors', category=tag) }}">{{ tag }}</a>
+        {% endfor %}
+      </div>
+
+      <div class="hero-trust">
+        <div class="avatar-stack">
+          {% for m in featured[:4] %}<img src="{{ m.avatar }}" alt="{{ m.name }}" data-fallback-seed="{{ m.name }}">{% endfor %}
+        </div>
+        <div class="hero-trust-text"><strong>{{ stats.mentors }}+ mentors</strong><span>trusted by learners worldwide</span></div>
+        <div class="rating-inline">{{ star(15) }} <strong>4.9</strong> / 5 average</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlapping featured mentor strip -->
+  <div class="strip-wrap">
+    <div class="container">
+      <div class="strip-heading">
+        <div><span class="strip-kicker">MEET YOUR MENTORS</span><h2>Featured this week</h2></div>
+        <a class="text-link" href="{{ url_for('main.mentors') }}">Browse all mentors {{ arrow(15) }}</a>
+      </div>
+      <div class="mentor-strip">
+        {% for m in featured %}
+        <a class="strip-card reveal" style="--i: {{ loop.index }}" href="{{ url_for('main.mentor_profile', mentor_id=m.id) }}">
+          <div class="strip-photo">
+            <img src="{{ m.avatar }}" alt="{{ m.name }}" loading="lazy" data-fallback-seed="{{ m.name }}">
+            {% if m.is_available %}<span class="pulse-dot" title="Available now"></span>{% endif %}
+            {% if m.verified %}<span class="verified-badge" title="Verified mentor">{{ verified(15) }}</span>{% endif %}
+          </div>
+          <div class="strip-info">
+            <h3>{{ m.name }}</h3>
+            <p>{{ m.headline }}</p>
+            <div class="strip-meta">
+              <span class="rating-inline">{{ star(13) }} {{ m.rating }}</span>
+              <span class="tag-chip">{{ m.category }}</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIVE STATS ============ -->
+<section class="section stats-section">
+  <div class="container">
+    <div class="stat-grid">
+      <div class="stat-card magnetic">
+        <div class="stat-icon green">{{ shield(24) }}</div>
+        <div><strong class="counter" data-target="{{ stats.mentors }}">{{ stats.mentors }}+</strong><span>Verified Mentors</span></div>
+      </div>
+      <div class="stat-card magnetic">
+        <div class="stat-icon lime">{{ chart(24) }}</div>
+        <div><strong class="counter" data-target="{{ stats.growth }}">{{ stats.growth }}%</strong><span>Average Career Growth</span></div>
+      </div>
+      <div class="stat-card magnetic">
+        <div class="stat-icon teal">{{ video(24) }}</div>
+        <div><strong class="counter" data-target="{{ stats.sessions }}">{{ stats.sessions }}+</strong><span>Live 1-on-1 Sessions</span></div>
+      </div>
+    </div>
+    <p class="live-note"><span class="live-pill"><i></i> LIVE</span> {{ stats.live_mentors }} mentors registered in this database · {{ stats.live_sessions }} sessions already accepted</p>
+  </div>
+</section>
+
+<!-- ============ BENTO GRID ============ -->
+<section class="section bento-section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow dark-eyebrow">WHY MENTORBRIDGE</span>
+      <h2>Everything you need to <span class="accent-text">grow faster</span></h2>
+      <p class="muted">A focused mentorship workspace — not another crowded social network.</p>
+    </div>
+
+    <div class="bento-grid">
+      <article class="bento-card bento-video magnetic">
+        <div class="bento-label">{{ video(16) }} LIVE 1-ON-1</div>
+        <h3>Real conversations,<br>not just messages.</h3>
+        <p>Accepted sessions get an instant Jitsi video room. Screen share, code together, learn in real time.</p>
+        <div class="video-preview" aria-hidden="true">
+          <div class="video-tile video-main">{% if featured %}<img src="{{ featured[1].avatar if featured|length > 1 else featured[0].avatar }}" alt="" data-fallback-seed="mentor">{% endif %}<span class="video-name">Live session</span><span class="rec-dot"></span></div>
+          <div class="video-tile video-small"><div class="video-placeholder">{{ calendar(22) }}</div><span class="video-name">You</span></div>
+        </div>
+      </article>
+
+      <article class="bento-card bento-goal magnetic">
+        <div class="bento-label">{{ bolt(16) }} GOAL TRACKING</div>
+        <h3>Turn intent into progress.</h3>
+        <div class="goal-list">
+          <div class="goal-row"><span class="goal-check done">{{ check(13) }}</span><div><strong>Build a Python portfolio</strong><small>Completed with Aarav</small></div><b>100%</b></div>
+          <div class="goal-row"><span class="goal-check">{{ check(13) }}</span><div><strong>Clear security interviews</strong><small>4 of 6 milestones</small></div><b>67%</b></div>
+          <div class="goal-progress"><i style="width:67%"></i></div>
+        </div>
+      </article>
+
+      <article class="bento-card bento-match magnetic">
+        <div class="bento-label">{{ code(16) }} SMART MATCHING</div>
+        <h3>The right mentor,<br>right now.</h3>
+        <p>Search by skill, domain or name and instantly narrow down mentors who actually do the work you want to learn.</p>
+        <a class="inline-cta" href="{{ url_for('main.mentors') }}">Explore directory {{ arrow(15) }}</a>
+        <div class="match-chips"><span>Python</span><span>Cyber Security</span><span>UI/UX</span><span>Data Science</span></div>
+      </article>
+
+      <article class="bento-card bento-trust magnetic">
+        <div class="bento-label">{{ shield(16) }} VERIFIED & RATED</div>
+        <div class="big-score">4.9<span>/5</span></div>
+        <div class="mini-stars">{{ star(16) }}{{ star(16) }}{{ star(16) }}{{ star(16) }}{{ star(16) }}</div>
+        <p>Every mentor profile is reviewed. Honest reviews from real sessions keep quality high.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CATEGORIES ============ -->
+<section class="section" id="categories">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow dark-eyebrow">EXPLORE DOMAINS</span>
+      <h2>Find your growth track</h2>
+    </div>
+    <div class="category-grid">
+      {% set icons = {'Python': code, 'Cyber Security': shield, 'Web Design': palette, 'Data Science': chart, 'Career Guidance': compass} %}
+      {% for key, label in categories %}
+      <a class="category-card magnetic" href="{{ url_for('main.mentors', category=key) }}">
+        <span class="category-icon">{{ icons[key](24) }}</span>
+        <strong>{{ label }}</strong>
+        <span class="muted small">Explore mentors {{ arrow(14) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section how-section" id="how-it-works">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow dark-eyebrow">HOW IT WORKS</span>
+      <h2>From search to session in three steps</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card"><span class="step-num">01</span><div class="step-icon">{{ search(22) }}</div><h3>Discover</h3><p>Search mentors by the exact skill you want to learn and compare profiles.</p></div>
+      <div class="step-card"><span class="step-num">02</span><div class="step-icon">{{ calendar(22) }}</div><h3>Request</h3><p>Pick a date, a time slot and a topic. Send your 1-on-1 session request.</p></div>
+      <div class="step-card"><span class="step-num">03</span><div class="step-icon">{{ video(22) }}</div><h3>Connect live</h3><p>Once accepted, join the generated video room and start learning together.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta-section">
+  <div class="container cta-inner">
+    <div>
+      <h2>Ready to build your bridge?</h2>
+      <p>Join as a learner or share your expertise as a mentor — it takes less than a minute.</p>
+    </div>
+    <div class="cta-actions">
+      <a class="btn btn-lime btn-lg" href="{{ url_for('auth.signup') }}">Create free account {{ arrow(17) }}</a>
+      <a class="btn btn-outline-light btn-lg" href="{{ url_for('main.mentors') }}">Browse mentors</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

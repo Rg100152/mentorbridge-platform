@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% from '_icons.html' import verified, star, video, briefcase, calendar, arrow, check, heart, shield, chart, bolt, code, compass, palette %}
+
+{% block title %}Dashboard — MentorBridge{% endblock %}
+
+{% block content %}
+<section class="dashboard-head">
+  <div class="container dash-head-inner">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-dot"></span> {{ 'MENTOR SPACE' if mode == 'mentor' else 'LEARNER SPACE' }}</span>
+      <h1>{{ 'Good to see you,' if mode == 'mentor' else 'Ready to grow,' }} {{ account.name.split()[0] }} 👋</h1>
+      <p>{{ 'Review requests, manage your availability and help learners move forward.' if mode == 'mentor' else 'Track your sessions, save mentors and request your next 1-on-1.' }}</p>
+    </div>
+    <div class="dash-head-actions">
+      <span class="role-pill">{{ verified(15) }} Verified {{ 'Mentor' if mode == 'mentor' else 'Mentee' }}</span>
+      {% if mode == 'mentee' %}<a class="btn btn-lime" href="{{ url_for('main.mentors') }}">Find a mentor {{ arrow(15) }}</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section dashboard-section">
+  <div class="container">
+    {% if mode == 'mentor' %}
+    <!-- ===== MENTOR DASHBOARD ===== -->
+    <div class="dash-stats">
+      <div class="dash-stat"><span class="dash-stat-icon amber">{{ calendar(20) }}</span><div><strong>{{ pending|length }}</strong><span>Pending requests</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon green">{{ video(20) }}</span><div><strong>{{ accepted|length }}</strong><span>Upcoming sessions</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon lime">{{ star(20) }}</span><div><strong>{{ profile.rating }}</strong><span>Your rating</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon teal">{{ chart(20) }}</span><div><strong>{{ profile.sessions_count }}</strong><span>Sessions delivered</span></div></div>
+    </div>
+
+    <div class="dash-layout">
+      <div class="dash-main">
+        <div class="dash-panel">
+          <div class="panel-head"><h2>Incoming session requests</h2><span class="count-badge">{{ bookings|length }}</span></div>
+          {% if bookings %}
+            {% for b in bookings %}
+            <article class="request-card status-{{ b.status }}">
+              <div class="request-person">
+                <img src="{{ b.mentee_avatar }}" alt="" data-fallback-seed="{{ b.mentee_name }}">
+                <div><strong>{{ b.mentee_name }}</strong><small>{{ b.mentee_email }}</small></div>
+                <span class="status-badge {{ b.status }}">{{ b.status|capitalize }}</span>
+              </div>
+              <h3>{{ b.topic }}</h3>
+              {% if b.note %}<p class="muted small">“{{ b.note }}”</p>{% endif %}
+              <div class="request-meta"><span>{{ calendar(14) }} {{ b.session_date }}</span><span>{{ b.time_slot }}</span></div>
+              {% if b.status == 'pending' %}
+              <div class="request-actions">
+                <form action="{{ url_for('dashboard.booking_action', booking_id=b.id, action='accept') }}" method="post"><button class="btn btn-primary btn-sm" type="submit">{{ check(15) }} Accept & generate video link</button></form>
+                <form action="{{ url_for('dashboard.booking_action', booking_id=b.id, action='decline') }}" method="post"><button class="btn btn-outline btn-sm" type="submit">Decline</button></form>
+              </div>
+              {% elif b.status == 'accepted' %}
+              <div class="accepted-box">
+                <div><strong>{{ video(15) }} Live room ready</strong><a href="{{ b.meeting_link }}" target="_blank" rel="noopener">{{ b.meeting_link }}</a></div>
+                <form action="{{ url_for('dashboard.booking_action', booking_id=b.id, action='complete') }}" method="post"><button class="btn btn-outline btn-sm" type="submit">Mark complete</button></form>
+              </div>
+              {% endif %}
+            </article>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state small-empty"><h3>No requests yet</h3><p class="muted">Make sure your profile is complete and available so learners can find you.</p></div>
+          {% endif %}
+        </div>
+
+        {% if reviews %}
+        <div class="dash-panel">
+          <div class="panel-head"><h2>Recent feedback</h2></div>
+          {% for r in reviews %}<div class="mini-review"><span class="stars">{% for i in range(r.rating) %}{{ star(13) }}{% endfor %}</span><p>{{ r.comment }}</p></div>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <aside class="dash-side">
+        <div class="dash-panel">
+          <div class="panel-head"><h2>Profile settings</h2><span class="count-badge">Public</span></div>
+          <form action="{{ url_for('dashboard.update_profile') }}" method="post" class="profile-form">
+            <label>Headline<input type="text" name="headline" value="{{ profile.headline }}" maxlength="120" required></label>
+            <label>Bio<textarea name="bio" rows="4" maxlength="2000" required>{{ profile.bio }}</textarea></label>
+            <label>Skills (comma separated)<input type="text" name="skills" value="{{ profile.skills }}" maxlength="500" required></label>
+            <div class="form-row">
+              <label>Domain<select name="category">
+                {% for key, label in [('Python','Python'),('Cyber Security','Cyber Security'),('Web Design','Web Design'),('Data Science','Data Science'),('Career Guidance','Career Guidance')] %}
+                <option {{ 'selected' if profile.category == key }}>{{ key }}</option>{% endfor %}
+              </select></label>
+              <label>Experience (yrs)<input type="number" name="experience" min="0" max="60" value="{{ profile.experience }}"></label>
+            </div>
+            <div class="form-row">
+              <label>Hourly rate (₹)<input type="number" name="hourly_rate" min="0" max="10000" value="{{ profile.hourly_rate|int }}"></label>
+              <label>GitHub username<input type="text" name="github_username" value="{{ profile.github_username }}" placeholder="octocat"></label>
+            </div>
+            <label>Free time slots (comma separated)<input type="text" name="free_slots" value="{{ profile.free_slots }}" placeholder="Mon 10:00, Wed 17:00"></label>
+            <label class="switch-line"><input type="checkbox" name="is_available" {{ 'checked' if profile.is_available }}><span class="switch-ui"></span> Accepting new session requests</label>
+            <button class="btn btn-primary btn-block" type="submit">Save profile {{ check(15) }}</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+
+    {% else %}
+    <!-- ===== MENTEE DASHBOARD ===== -->
+    <div class="dash-stats">
+      <div class="dash-stat"><span class="dash-stat-icon green">{{ video(20) }}</span><div><strong>{{ bookings|length }}</strong><span>Total requests</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon amber">{{ calendar(20) }}</span><div><strong>{{ bookings|selectattr('status','equalto','pending')|list|length }}</strong><span>Awaiting response</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon lime">{{ check(20) }}</span><div><strong>{{ bookings|selectattr('status','equalto','accepted')|list|length }}</strong><span>Sessions confirmed</span></div></div>
+      <div class="dash-stat"><span class="dash-stat-icon teal">{{ heart(20) }}</span><div><strong>{{ favorites|length }}</strong><span>Saved mentors</span></div></div>
+    </div>
+
+    <div class="dash-layout">
+      <div class="dash-main">
+        <div class="dash-panel">
+          <div class="panel-head"><h2>My sessions</h2><a class="text-link" href="{{ url_for('main.mentors') }}">Request a new one {{ arrow(14) }}</a></div>
+          {% if bookings %}
+            {% for b in bookings %}
+            <article class="request-card status-{{ b.status }}">
+              <div class="request-person">
+                <img src="{{ b.mentor_avatar }}" alt="" data-fallback-seed="{{ b.mentor_name }}">
+                <div><strong>{{ b.mentor_name }}</strong><small>{{ b.category or 'Mentor' }}</small></div>
+                <span class="status-badge {{ b.status }}">{{ b.status|capitalize }}</span>
+              </div>
+              <h3>{{ b.topic }}</h3>
+              <div class="request-meta"><span>{{ calendar(14) }} {{ b.session_date }}</span><span>{{ b.time_slot }}</span></div>
+              {% if b.status == 'accepted' and b.meeting_link %}
+              <div class="accepted-box"><div><strong>{{ video(15) }} Your live room is ready</strong><a href="{{ b.meeting_link }}" target="_blank" rel="noopener">{{ b.meeting_link }}</a></div></div>
+              {% elif b.status == 'pending' %}
+              <p class="muted small">Waiting for your mentor to accept this request.</p>
+              <form action="{{ url_for('dashboard.booking_action', booking_id=b.id, action='cancel') }}" method="post"><button class="btn btn-outline btn-sm" type="submit">Cancel request</button></form>
+              {% endif %}
+            </article>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state small-empty"><h3>No sessions yet</h3><p class="muted">Find a mentor and send your first 1-on-1 request.</p><a class="btn btn-primary" href="{{ url_for('main.mentors') }}">Browse mentors</a></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <aside class="dash-side">
+        <div class="dash-panel">
+          <div class="panel-head"><h2>Saved mentors</h2><span class="count-badge">{{ favorites|length }}</span></div>
+          {% if favorites %}
+            {% for f in favorites %}
+            <a class="favorite-row" href="{{ url_for('main.mentor_profile', mentor_id=f.id) }}">
+              <img src="{{ f.avatar }}" alt="" data-fallback-seed="{{ f.name }}">
+              <div><strong>{{ f.name }}</strong><small>{{ f.headline }}</small><span>{{ star(12) }} {{ f.rating }}</span></div>{{ arrow(14) }}
+            </a>
+            {% endfor %}
+          {% else %}<p class="muted small">Save mentors you like and they will appear here.</p>{% endif %}
+        </div>
+
+        <div class="dash-panel">
+          <div class="panel-head"><h2>Recommended for you</h2></div>
+          {% for m in recommended %}
+          <a class="favorite-row" href="{{ url_for('main.mentor_profile', mentor_id=m.id) }}">
+            <img src="{{ m.avatar }}" alt="" data-fallback-seed="{{ m.name }}">
+            <div><strong>{{ m.name }}</strong><small>{{ m.category }} · {{ m.experience }} yrs</small><span>{{ star(12) }} {{ m.rating }}</span></div>{{ arrow(14) }}
+          </a>
+          {% endfor %}
+        </div>
+      </aside>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

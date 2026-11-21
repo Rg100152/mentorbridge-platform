@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from '_icons.html' import search, verified, star, briefcase, arrow, calendar, code, shield, palette, chart, compass %}
+
+{% block title %}Find Mentors — MentorBridge{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> MENTOR DIRECTORY</span>
+    <h1>Find the mentor who <span class="gradient-text">gets you there</span></h1>
+    <p>Filter by skill or domain, compare experience and book a live 1-on-1 session.</p>
+    <form class="hero-search directory-search" action="{{ url_for('main.mentors') }}" method="get" role="search">
+      <label class="sr-only" for="dirSearch">Search mentors</label>
+      <span class="search-icon">{{ search(19) }}</span>
+      <input id="dirSearch" type="search" name="q" value="{{ q }}" placeholder="Search by skill, name or expertise...">
+      {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+<section class="section directory-section">
+  <div class="container">
+    <div class="filter-bar">
+      <div class="filter-chips" role="group" aria-label="Filter by category">
+        <a class="chip {{ 'active' if not category or category.lower() == 'all' }}" href="{{ url_for('main.mentors', q=q) }}">All mentors</a>
+        {% for key, label in categories %}
+          <a class="chip {{ 'active' if category == key }}" href="{{ url_for('main.mentors', category=key, q=q) }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+      <label class="instant-filter">
+        <span class="search-icon">{{ search(15) }}</span>
+        <input type="search" id="instantFilter" placeholder="Instant filter on this page..." aria-label="Instant filter">
+      </label>
+    </div>
+
+    <div class="results-line">
+      <strong id="resultCount">{{ mentors|length }}</strong> mentor{{ '' if mentors|length == 1 else 's' }} found
+      {% if q %} for “{{ q }}”{% endif %}{% if category %} in {{ category }}{% endif %}
+    </div>
+
+    {% if mentors %}
+    <div class="mentor-grid" id="mentorGrid">
+      {% set icons = {'Python': code, 'Cyber Security': shield, 'Web Design': palette, 'Data Science': chart, 'Career Guidance': compass} %}
+      {% for m in mentors %}
+      <article class="mentor-card magnetic" data-search="{{ (m.name ~ ' ' ~ m.skills ~ ' ' ~ m.headline ~ ' ' ~ m.category)|lower }}" data-category="{{ m.category|lower }}">
+        <div class="mentor-card-top">
+          <div class="mentor-photo">
+            <img src="{{ m.avatar }}" alt="{{ m.name }}" loading="lazy" data-fallback-seed="{{ m.name }}">
+            {% if m.is_available %}<span class="pulse-dot" title="Available now"></span>{% endif %}
+          </div>
+          <div class="mentor-card-head">
+            <h3>{{ m.name }} {% if m.verified %}<span class="verified-badge" title="Verified mentor">{{ verified(15) }}</span>{% endif %}</h3>
+            <p>{{ m.headline }}</p>
+            <span class="category-pill">{{ icons.get(m.category, compass)(13) }} {{ m.category }}</span>
+          </div>
+        </div>
+        <div class="skill-chips">
+          {% for skill in (m.skills or '').split(',')[:4] %}<span>{{ skill.strip() }}</span>{% endfor %}
+        </div>
+        <div class="mentor-card-meta">
+          <span>{{ star(14) }} <strong>{{ m.rating }}</strong></span>
+          <span>{{ briefcase(15) }} {{ m.experience }} yrs</span>
+          <span class="price">{{ 'Free' if m.hourly_rate == 0 else '₹' ~ m.hourly_rate|int ~ '/hr' }}</span>
+        </div>
+        <a class="btn btn-outline btn-block" href="{{ url_for('main.mentor_profile', mentor_id=m.id) }}">View profile {{ arrow(15) }}</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state card">
+      <h2>No mentors matched that search</h2>
+      <p class="muted">Try a broader skill like “Python” or clear the filters.</p>
+      <a class="btn btn-primary" href="{{ url_for('main.mentors') }}">Show all mentors</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
